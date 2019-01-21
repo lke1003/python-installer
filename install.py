@@ -9,6 +9,17 @@ locale.setlocale(locale.LC_ALL, '')
 flashDir="/flash"
 diskDir="/disk"
 
+SG_MAP_INSTALL_USB_NAME="opf-installer"
+
+GV_FLASH_P1_LABEL="Prom_fp1"
+GV_FLASH_P2_LABEL="Prom_fp2"
+GV_FLASH_P3_LABEL="Prom_sys"
+
+MSG_NO_DOM="Please insert one DOM (Media) for installation"
+GV_USB_INSTALL_PART=""
+GV_USB_INSTALL_DEV=""
+DD_FLASH_DEV=""
+
 # You may want to use 'autowidgetsize=True' here (requires pythondialog >= 3.1)
 
 # For older versions, you can use:
@@ -21,10 +32,10 @@ def handle_exit_code(d, code):
   if code in (d.DIALOG_CANCEL, d.DIALOG_ESC):
     if code == d.DIALOG_CANCEL:
         msg = "You chose cancel in the last dialog box. Do you want to " \
-              "exit this demo?"
+              "exit this installation?"
     else:
         msg = "You pressed ESC in the last dialog box. Do you want to " \
-              "exit this demo?"
+              "exit this installation?"
     # "No" or "ESC" will bring the user back to the demo.
     # DIALOG_ERROR is propagated as an exception and caught in main().
     # So we only need to handle OK here.
@@ -48,6 +59,7 @@ def device_menu(d):
         break
   return tags
 
+#Check Directory exist or not, otherwise create for intaller
 def check_dir(dir_path):
   if not os.path.exists(dir_path):
     os.makedirs( dir_path, 0o755 )
@@ -63,13 +75,45 @@ def check_no_hdd():
   return no_hdd
 
 
-
-def main():
+def set_param():
+  global GV_USB_INSTALL_PART
+  global GV_USB_INSTALL_DEV
+  cmd="blkid | grep -E /dev/sd.*{0} ".format(SG_MAP_INSTALL_USB_NAME)
+  cmd=cmd + "| awk '{print $1}' | sed 's/://g'"
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  GV_USB_INSTALL_PART = output.stdout.rstrip()
+  cmd="echo {0} | sed 's/.$//g'".format(GV_USB_INSTALL_PART)
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  GV_USB_INSTALL_DEV=output.stdout.rstrip()
   check_dir(flashDir)
   check_dir(diskDir)
+
+def check_dom_is_exist():
+  cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\" | wc -l".format(GV_USB_INSTALL_DEV)
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  if output.stdout.rstrip() == "0" :
+    return False
+  else:
+    cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\"".format(GV_USB_INSTALL_DEV)
+    cmd=cmd+"| awk '{print $2}'"
+    output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+    global DD_FLASH_DEV
+    DD_FLASH_DEV=output.stdout.rstrip()
+    return True
+
+def poweroff_msg(d, msg):
+  d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
+        width=80,)
+  os.system("shutdown now -h")
+
+  
+def main():
   d = Dialog(dialog="dialog")
-  # Dialog.set_background_title() requires pythondialog 2.13 or later
   d.set_background_title("Welcome to Promise Storage Appliance target installation version: 1.0")
+  set_param()
+  if check_dom_is_exist() != True:
+    poweroff_msg(d, MSG_NO_DOM)
+  time.sleep(5)
   install_device=device_menu(d)  # 1 = install on flash, 2 = install on HDD
   d.msgbox(install_device)
 
