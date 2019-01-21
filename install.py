@@ -52,12 +52,22 @@ def device_menu(d):
             choices=[("1", "Internal Flash. (default)"), 
                      ("2", " Hard Disk Drive.")])
       if tags == "2":
-        if check_no_hdd == 0:
+        if check_no_hdd() != 0:
           d.msgbox("Please insert HDD for install OS", width=80)
           continue
       if handle_exit_code(d, code):
         break
   return tags
+
+def full_install_confirm(d):
+  if d.yesno("Clean All and Full Install") == d.OK:
+    if d.yesno("All of Data in HDD will be replaced.") == d.OK:
+      return True
+    else:
+      return False
+  else:
+    return False
+
 
 #Check Directory exist or not, otherwise create for intaller
 def check_dir(dir_path):
@@ -104,7 +114,7 @@ def check_dom_is_exist():
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
         width=80,)
-  os.system("shutdown now -h")
+  #os.system("shutdown now -h")
 
   
 def main():
@@ -113,9 +123,14 @@ def main():
   set_param()
   if check_dom_is_exist() != True:
     poweroff_msg(d, MSG_NO_DOM)
-  time.sleep(5)
   install_device=device_menu(d)  # 1 = install on flash, 2 = install on HDD
-  d.msgbox(install_device)
+  if full_install_confirm(d) == True:
+    d.msgbox("True")
+  else:
+    if d.yesno("Shutdown?") == d.OK:
+      poweroff_msg(d, "")
+    else:
+      main()
 
 if __name__ == '__main__':
   main()
