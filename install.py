@@ -18,7 +18,9 @@ GV_FLASH_P3_LABEL="Prom_sys"
 MSG_NO_DOM="Please insert one DOM (Media) for installation"
 GV_USB_INSTALL_PART=""
 GV_USB_INSTALL_DEV=""
+GV_NUMBER_OF_HDD=0
 DD_FLASH_DEV=""
+SELECTED_RAID_MODE=""
 
 # You may want to use 'autowidgetsize=True' here (requires pythondialog >= 3.1)
 
@@ -52,9 +54,10 @@ def device_menu(d):
             choices=[("1", "Internal Flash. (default)"), 
                      ("2", " Hard Disk Drive.")])
       if tags == "2":
-        if check_no_hdd() != 0:
+        if check_number_of_hdd() == 0:
           d.msgbox("Please insert HDD for install OS", width=80)
           continue
+        get_raid_mode_table(d)
       if handle_exit_code(d, code):
         break
   return tags
@@ -68,21 +71,64 @@ def full_install_confirm(d):
   else:
     return False
 
+def get_raid_mode_table(d):
+  #RMT_COUNT="PD_COUNT="+str(GV_NUMBER_OF_HDD)
+  RMT_COUNT="PD_COUNT="+str(4)
+  no=0
+  LIST_MODE_RESULT=[]
+  LIST_DEFAULT=False
+  global SELECTED_RAID_MODE 
+  cmd="cat raid_mode_table | grep {0}\":\" | ".format(RMT_COUNT)
+  cmd=cmd+"awk '{print $2}' | sed 's/DF=//g'"
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  DF_RAID_MODE=output.stdout.rstrip()
+
+  cmd="cat raid_mode_table | grep {0}\":\" | ".format(RMT_COUNT)
+  cmd=cmd+"awk '{print $3}' | sed 's/,/ /g'"
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  LIST_RAID_MODE=output.stdout.rstrip()
+  LIST_RAID_MODE=LIST_RAID_MODE.split(" ")
+  for mode in LIST_RAID_MODE:
+    no+=1
+    if(no == 1):
+      LIST_DEFAULT = True
+    else:
+      LIST_DEFAULT = False
+    LIST_MODE_RESULT.append([str(no), mode, LIST_DEFAULT])
+
+  while 1:               
+    SELECTED_RAID_MODE = radio_list_raid_mode(d, LIST_MODE_RESULT)
+    if d.yesno("Did you select "+ SELECTED_RAID_MODE) == d.OK:
+      break
+
+
+def radio_list_raid_mode(d, Raid_MODE):
+  while 1:
+    code, tag=d.radiolist("Please select the raid mode",
+                          width = 65,
+                          choices=Raid_MODE)
+    if handle_exit_code(d, code):
+      break
+  return Raid_MODE[int(tag)-1][1]
+
+
+  
 
 #Check Directory exist or not, otherwise create for intaller
 def check_dir(dir_path):
   if not os.path.exists(dir_path):
     os.makedirs( dir_path, 0o755 )
 
-def check_no_hdd():
-  no_hdd=0
+def check_number_of_hdd():
+  global GV_NUMBER_OF_HDD
+  GV_NUMBER_OF_HDD=0
   cmd="clitest -u administrator -p password -C phydrv | grep Slot | awk '{print $1}'"
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
 
   for no in output.stdout:
     if(no!="\n"):
-      no_hdd += 1
-  return no_hdd
+      GV_NUMBER_OF_HDD += 1
+  return GV_NUMBER_OF_HDD
 
 
 def set_param():
@@ -99,6 +145,7 @@ def set_param():
   check_dir(diskDir)
 
 def check_dom_is_exist():
+  global DD_FLASH_DEV
   cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\" | wc -l".format(GV_USB_INSTALL_DEV)
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
   if output.stdout.rstrip() == "0" :
@@ -107,7 +154,6 @@ def check_dom_is_exist():
     cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\"".format(GV_USB_INSTALL_DEV)
     cmd=cmd+"| awk '{print $2}'"
     output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
-    global DD_FLASH_DEV
     DD_FLASH_DEV=output.stdout.rstrip()
     return True
 
