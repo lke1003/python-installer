@@ -2,7 +2,7 @@
 
 DD_FLASH_DEV=$1
 
-    
+echo "################# Create Flash Partition ########################" >> fullinstall.log   
 # clear install target #
 dd if=/dev/zero of=$DD_FLASH_DEV bs=1024k count=10 >/dev/null 2>&1
 

@@ -24,9 +24,12 @@ GV_USB_INSTALL_DEV=""
 DD_FLASH_DEV=""
 GV_NUMBER_OF_HDD=0
 SELECTED_RAID_MODE=""
+INSTALL_DEVICE=1
 SCRIPT_PARTITION_RENAME="./partition_rename.sh "
 SCRIPT_CREATE_FLASH_PARTITION="./create_flash_partition.sh "
 SCRIPT_CREATE_FLASH_FILESYSTEM="./create_flash_filesystem.sh "
+SCRIPT_WAIT_I2="./wait_i2.sh "
+SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
 
 
 def handle_exit_code(d, code):
@@ -160,6 +163,7 @@ def get_flash_dev():
   return FLASH_DEV
 
 def log_param():
+  logging.debug("-------------------------Global Parameter--------------------")
   logging.debug("SG_MAP_INSTALL_USB_NAME="+SG_MAP_INSTALL_USB_NAME)
   logging.debug("GV_FLASH_P1_LABEL="+GV_FLASH_P1_LABEL)
   logging.debug("GV_FLASH_P2_LABEL="+GV_FLASH_P2_LABEL)
@@ -170,7 +174,8 @@ def log_param():
   logging.debug("SCRIPT_PARTITION_RENAME="+SCRIPT_PARTITION_RENAME)
   logging.debug("SCRIPT_CREATE_FLASH_PARTITION="+SCRIPT_CREATE_FLASH_PARTITION)
   logging.debug("SCRIPT_CREATE_FLASH_FILESYSTEM="+SCRIPT_CREATE_FLASH_FILESYSTEM)
-  
+  logging.debug("INSTALL_DEVICE="+INSTALL_DEVICE)
+  logging.debug("-------------------------Global Parameter End--------------------")
 
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
@@ -178,42 +183,63 @@ def poweroff_msg(d, msg):
   #os.system("shutdown now -h")
 
 def full_install(d):
-  d.gauge_start("Flash Partition Rename", title="Starting Install")
-  logging.info('---------------------Flash Partition Rename---------------------')
+  d.gauge_start("Flash Partition Rename", title="Starting Install")  
   partition_rename()
   time.sleep(3) 
-  d.gauge_update(5, "Create Flash Partition", update_text=1)
-  logging.info('---------------------Create Flash Partition---------------------')
+  d.gauge_update(5, "Create Flash Partition", update_text=1)  
   create_flash_partition()
   time.sleep(3) 
-  d.gauge_update(10, "Create Flash FileSystem", update_text=1)
-  logging.info('---------------------Create Flash FileSystem---------------------')
+  d.gauge_update(10, "Create Flash FileSystem", update_text=1) 
   create_flash_filesystem()
+  time.sleep(3) 
+  d.gauge_update(20, "Mount Disk", update_text=1) 
+  mount_disk()
   d.gauge_stop() 
 
 def partition_rename():
+  logging.info("---------------------Flash Partition Rename---------------------")
   cmd=SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL
   logging.debug(cmd)
   output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def create_flash_partition():
+  logging.info("---------------------Create Flash Partition---------------------")
   cmd=SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV
   logging.debug(cmd)
-  output = subprocess.Popen(SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV, shell=True, stdout=subprocess.PIPE)
+  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def create_flash_filesystem():
-  cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + " 0"
+  logging.info("---------------------Create Flash FileSystem---------------------")
+  if INSTALL_DEVICE == "1": 
+    INSTALL_OS_TO_FLASH = " 0"
+  else:
+    INSTALL_OS_TO_FLASH = " 1"
+  cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + INSTALL_OS_TO_FLASH
+  logging.debug(cmd)
+  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+
+def mount_disk():
+  logging.info("---------------------Mount Disk---------------------")
+  cmd=SCRIPT_MOUNT_ROOTFS + DD_FLASH_DEV + " " + GV_USB_INSTALL_PART + " " + diskDir
+  logging.debug(cmd)
+  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+
+def wait_i2():
+  logging.info("---------------------Wait I2--------------------")
+  cmd=SCRIPT_WAIT_I2
   logging.debug(cmd)
   output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def main():
   logging.info('Start Installer')
+  wait_i2()
   d = Dialog(dialog="dialog")
   d.set_background_title("Welcome to Promise Storage Appliance target installation version: 1.0")
   set_param()
   if check_dom_is_exist() != True:
     poweroff_msg(d, MSG_NO_DOM)
-  install_device=device_menu(d)  # 1 = install on flash, 2 = install on HDD
+  global INSTALL_DEVICE
+  INSTALL_DEVICE=device_menu(d)  # 1 = install on flash, 2 = install on HDD
   if full_install_confirm(d) == True:
     log_param()
     full_install(d)

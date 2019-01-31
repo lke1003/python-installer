@@ -5,6 +5,7 @@ GV_FLASH_P2_LABEL=$2
 DD_FLASH_DEV=$3
 GV_INSTALL_OS_TO_FLASH=$4
 
+echo "################# Create Flash Filesystem ########################" >> fullinstall.log
 #Create Partition 1 filesystem
 yes | mkfs.ext4 -L "$GV_FLASH_P1_LABEL" ""$DD_FLASH_DEV"1" >/dev/null 2>&1
 
