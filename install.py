@@ -1,11 +1,16 @@
 #! /usr/bin/env python3
 
 import locale
-import sys, os, os.path, time, string, subprocess
+import sys, os, os.path, time, string, subprocess, logging
+import logging.config
 from dialog import Dialog
+
 
 # This is almost always a good thing to do at the beginning of your programs.
 locale.setlocale(locale.LC_ALL, '')
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='install.log', level=logging.DEBUG)
+
+
 flashDir="/flash"
 diskDir="/disk"
 
@@ -17,17 +22,14 @@ GV_FLASH_P2_LABEL="Prom_sys"
 MSG_NO_DOM="Please insert one DOM (Media) for installation"
 GV_USB_INSTALL_PART=""
 GV_USB_INSTALL_DEV=""
+DD_FLASH_DEV=""
 GV_NUMBER_OF_HDD=0
 SELECTED_RAID_MODE=""
+SCRIPT_PARTITION_RENAME="./partition_rename.sh "
+SCRIPT_CREATE_FLASH_PARTITION="./create_flash_partition.sh "
+SCRIPT_CREATE_FLASH_FILESYSTEM="./create_flash_filesystem.sh "
 
-# You may want to use 'autowidgetsize=True' here (requires pythondialog >= 3.1)
 
-# For older versions, you can use:
-#   d.add_persistent_args(["--backtitle", "My little program"])
-
-# In pythondialog 3.x, you can compare the return code to d.OK, Dialog.OK or
-# "ok" (same object). In pythondialog 2.x, you have to use d.DIALOG_OK, which
-# is deprecated since version 3.0.0.
 def handle_exit_code(d, code):
   if code in (d.DIALOG_CANCEL, d.DIALOG_ESC):
     if code == d.DIALOG_CANCEL:
@@ -108,25 +110,6 @@ def radio_list_raid_mode(d, Raid_MODE):
     if handle_exit_code(d, code):
       break
   return Raid_MODE[int(tag)-1][1]
-
-def gauge_demo(d):
-  d.gauge_start("Progress: 0%", title="Still testing your patience...")
-  for i in range(1, 101):
-    if i < 50:
-        d.gauge_update(i, "Progress: %d%%" % i, update_text=1)
-    elif i == 50:
-        d.gauge_update(i, "Over %d%%. Good." % i, update_text=1)
-    elif i == 80:
-        d.gauge_update(i, "Yeah, this boring crap will be over Really "
-                            "Soon Now.", update_text=1)
-    else:
-        d.gauge_update(i)
-
-  if FAST_DEMO:
-      time.sleep(0.01)
-  else:
-      time.sleep(0.1)
-  d.gauge_stop()
   
 
 #Check Directory exist or not, otherwise create for intaller
@@ -149,6 +132,8 @@ def check_number_of_hdd():
 def set_param():
   global GV_USB_INSTALL_PART
   global GV_USB_INSTALL_DEV
+  global DD_FLASH_DEV
+  DD_FLASH_DEV=get_flash_dev()
   cmd="blkid | grep -E /dev/sd.*{0} ".format(SG_MAP_INSTALL_USB_NAME)
   cmd=cmd + "| awk '{print $1}' | sed 's/://g'"
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
@@ -185,24 +170,23 @@ def full_install(d):
   partition_rename()
   time.sleep(3) 
   d.gauge_update(5, "Create Flash Partition", update_text=1)
-  #subprocess.Popen(['create_flash_partition ' + get_flash_dev()], shell = True)
+  create_flash_partition()
   time.sleep(3) 
   d.gauge_update(10, "Create Flash FileSystem", update_text=1)
 
 def partition_rename():
-  cmd="blkid -s LABEL | grep {0} ".format("Prom_sys")
-  cmd+="|awk '{print $1}' |sed 's/://g'"
-  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
-  devlist=[]
-  devlist=[x for x in output.stdout.rsplit()]
-  for dev in devlist:
-      cmd="tune2fs -L \"Prom\" {0}".format(dev)
-      output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  output = subprocess.Popen([SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL], shell=True, stdout=subprocess.PIPE)
 
+def create_flash_partition():
+  output = subprocess.Popen([SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV], shell=True, stdout=subprocess.PIPE)
 
-
+def create_flash_filesystem():
+  cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + " 0"
+  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def main():
+  logging.warning('is when this event was logged.')
+  logging.info('info')
   d = Dialog(dialog="dialog")
   d.set_background_title("Welcome to Promise Storage Appliance target installation version: 1.0")
   set_param()
