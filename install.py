@@ -2,7 +2,6 @@
 
 import locale
 import sys, os, os.path, time, string, subprocess, logging
-import logging.config
 from dialog import Dialog
 
 
@@ -132,8 +131,6 @@ def check_number_of_hdd():
 def set_param():
   global GV_USB_INSTALL_PART
   global GV_USB_INSTALL_DEV
-  global DD_FLASH_DEV
-  DD_FLASH_DEV=get_flash_dev()
   cmd="blkid | grep -E /dev/sd.*{0} ".format(SG_MAP_INSTALL_USB_NAME)
   cmd=cmd + "| awk '{print $1}' | sed 's/://g'"
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
@@ -141,6 +138,8 @@ def set_param():
   cmd="echo {0} | sed 's/.$//g'".format(GV_USB_INSTALL_PART)
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
   GV_USB_INSTALL_DEV=output.stdout.rstrip()
+  global DD_FLASH_DEV
+  DD_FLASH_DEV=get_flash_dev()
   check_dir(flashDir)
   check_dir(diskDir)
 
@@ -160,6 +159,19 @@ def get_flash_dev():
   FLASH_DEV=output.stdout.rstrip()
   return FLASH_DEV
 
+def log_param():
+  logging.debug("SG_MAP_INSTALL_USB_NAME="+SG_MAP_INSTALL_USB_NAME)
+  logging.debug("GV_FLASH_P1_LABEL="+GV_FLASH_P1_LABEL)
+  logging.debug("GV_FLASH_P2_LABEL="+GV_FLASH_P2_LABEL)
+  logging.debug("GV_USB_INSTALL_PART="+GV_USB_INSTALL_PART)
+  logging.debug("GV_USB_INSTALL_DEV="+GV_USB_INSTALL_DEV)
+  logging.debug("DD_FLASH_DEV="+DD_FLASH_DEV)
+  logging.debug("SELECTED_RAID_MODE="+SELECTED_RAID_MODE)
+  logging.debug("SCRIPT_PARTITION_RENAME="+SCRIPT_PARTITION_RENAME)
+  logging.debug("SCRIPT_CREATE_FLASH_PARTITION="+SCRIPT_CREATE_FLASH_PARTITION)
+  logging.debug("SCRIPT_CREATE_FLASH_FILESYSTEM="+SCRIPT_CREATE_FLASH_FILESYSTEM)
+  
+
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
         width=80,)
@@ -167,26 +179,35 @@ def poweroff_msg(d, msg):
 
 def full_install(d):
   d.gauge_start("Flash Partition Rename", title="Starting Install")
+  logging.info('---------------------Flash Partition Rename---------------------')
   partition_rename()
   time.sleep(3) 
   d.gauge_update(5, "Create Flash Partition", update_text=1)
+  logging.info('---------------------Create Flash Partition---------------------')
   create_flash_partition()
   time.sleep(3) 
   d.gauge_update(10, "Create Flash FileSystem", update_text=1)
+  logging.info('---------------------Create Flash FileSystem---------------------')
+  create_flash_filesystem()
+  d.gauge_stop() 
 
 def partition_rename():
-  output = subprocess.Popen([SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL], shell=True, stdout=subprocess.PIPE)
+  cmd=SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL
+  logging.debug(cmd)
+  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def create_flash_partition():
-  output = subprocess.Popen([SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV], shell=True, stdout=subprocess.PIPE)
+  cmd=SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV
+  logging.debug(cmd)
+  output = subprocess.Popen(SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV, shell=True, stdout=subprocess.PIPE)
 
 def create_flash_filesystem():
   cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + " 0"
+  logging.debug(cmd)
   output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def main():
-  logging.warning('is when this event was logged.')
-  logging.info('info')
+  logging.info('Start Installer')
   d = Dialog(dialog="dialog")
   d.set_background_title("Welcome to Promise Storage Appliance target installation version: 1.0")
   set_param()
@@ -194,6 +215,7 @@ def main():
     poweroff_msg(d, MSG_NO_DOM)
   install_device=device_menu(d)  # 1 = install on flash, 2 = install on HDD
   if full_install_confirm(d) == True:
+    log_param()
     full_install(d)
   else:
     if d.yesno("Shutdown?") == d.OK:
