@@ -1,3 +1,5 @@
+#!/bin/bash
+
 GV_FLASH_P2_LABEL=$1
 
 RENAME_DEV=$(blkid -s LABEL | grep "$GV_FLASH_P2_LABEL" |awk '{print $1}' |sed 's/://g' )

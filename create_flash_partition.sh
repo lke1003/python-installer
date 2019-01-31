@@ -1,3 +1,5 @@
+#!/bin/bash
+
 DD_FLASH_DEV=$1
 
     

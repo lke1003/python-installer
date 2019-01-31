@@ -1,3 +1,5 @@
+#!/bin/bash
+
 GV_FLASH_P1_LABEL=$1
 GV_FLASH_P2_LABEL=$2
 DD_FLASH_DEV=$3
