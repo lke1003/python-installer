@@ -12,14 +12,12 @@ diskDir="/disk"
 SG_MAP_INSTALL_USB_NAME="opf-installer"
 
 GV_FLASH_P1_LABEL="Prom_fp1"
-GV_FLASH_P2_LABEL="Prom_fp2"
-GV_FLASH_P3_LABEL="Prom_sys"
+GV_FLASH_P2_LABEL="Prom_sys"
 
 MSG_NO_DOM="Please insert one DOM (Media) for installation"
 GV_USB_INSTALL_PART=""
 GV_USB_INSTALL_DEV=""
 GV_NUMBER_OF_HDD=0
-DD_FLASH_DEV=""
 SELECTED_RAID_MODE=""
 
 # You may want to use 'autowidgetsize=True' here (requires pythondialog >= 3.1)
@@ -111,7 +109,24 @@ def radio_list_raid_mode(d, Raid_MODE):
       break
   return Raid_MODE[int(tag)-1][1]
 
+def gauge_demo(d):
+  d.gauge_start("Progress: 0%", title="Still testing your patience...")
+  for i in range(1, 101):
+    if i < 50:
+        d.gauge_update(i, "Progress: %d%%" % i, update_text=1)
+    elif i == 50:
+        d.gauge_update(i, "Over %d%%. Good." % i, update_text=1)
+    elif i == 80:
+        d.gauge_update(i, "Yeah, this boring crap will be over Really "
+                            "Soon Now.", update_text=1)
+    else:
+        d.gauge_update(i)
 
+  if FAST_DEMO:
+      time.sleep(0.01)
+  else:
+      time.sleep(0.1)
+  d.gauge_stop()
   
 
 #Check Directory exist or not, otherwise create for intaller
@@ -145,24 +160,48 @@ def set_param():
   check_dir(diskDir)
 
 def check_dom_is_exist():
-  global DD_FLASH_DEV
   cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\" | wc -l".format(GV_USB_INSTALL_DEV)
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
   if output.stdout.rstrip() == "0" :
     return False
   else:
-    cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\"".format(GV_USB_INSTALL_DEV)
-    cmd=cmd+"| awk '{print $2}'"
-    output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
-    DD_FLASH_DEV=output.stdout.rstrip()
     return True
+
+def get_flash_dev():
+  FLASH_DEV=""
+  cmd="sg_map -i | grep -E -v \"{0}|/dev/sr|Promise\"".format(GV_USB_INSTALL_DEV)
+  cmd=cmd+"| awk '{print $2}'"
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  FLASH_DEV=output.stdout.rstrip()
+  return FLASH_DEV
 
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
         width=80,)
   #os.system("shutdown now -h")
 
-  
+def full_install(d):
+  d.gauge_start("Flash Partition Rename", title="Starting Install")
+  partition_rename()
+  time.sleep(3) 
+  d.gauge_update(5, "Create Flash Partition", update_text=1)
+  #subprocess.Popen(['create_flash_partition ' + get_flash_dev()], shell = True)
+  time.sleep(3) 
+  d.gauge_update(10, "Create Flash FileSystem", update_text=1)
+
+def partition_rename():
+  cmd="blkid -s LABEL | grep {0} ".format("Prom_sys")
+  cmd+="|awk '{print $1}' |sed 's/://g'"
+  output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+  devlist=[]
+  devlist=[x for x in output.stdout.rsplit()]
+  for dev in devlist:
+      cmd="tune2fs -L \"Prom\" {0}".format(dev)
+      output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
+
+
+
+
 def main():
   d = Dialog(dialog="dialog")
   d.set_background_title("Welcome to Promise Storage Appliance target installation version: 1.0")
@@ -171,7 +210,7 @@ def main():
     poweroff_msg(d, MSG_NO_DOM)
   install_device=device_menu(d)  # 1 = install on flash, 2 = install on HDD
   if full_install_confirm(d) == True:
-    d.msgbox("True")
+    full_install(d)
   else:
     if d.yesno("Shutdown?") == d.OK:
       poweroff_msg(d, "")
