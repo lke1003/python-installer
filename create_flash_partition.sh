@@ -42,4 +42,4 @@ w
 EOF
 sleep 1
 
-
+exit 0

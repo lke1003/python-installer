@@ -4,11 +4,13 @@ GV_FLASH_P1_LABEL=$1
 GV_FLASH_P2_LABEL=$2
 DD_FLASH_DEV=$3
 GV_INSTALL_OS_TO_FLASH=$4
+RESULT=0
 
 func_check_error()
 {
     if [ $1 != 0 ]; then
         echo $2 >> fullinstall.log
+        RESULT=1
     fi
 }
 
@@ -26,3 +28,6 @@ yes | mkfs.ext4 -L "$GV_FLASH_P2_LABEL" ""$DD_FLASH_DEV"2" >/dev/null 2>&1
 func_check_error $? "Can not create filesystem in partition3 of flash."
 sleep 1
 fi
+
+exit $RESULT
+

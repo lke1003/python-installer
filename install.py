@@ -200,13 +200,15 @@ def partition_rename():
   logging.info("---------------------Flash Partition Rename---------------------")
   cmd=SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL
   logging.debug(cmd)
-  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  output = os.system(cmd)
+  logging.debug(output)
 
 def create_flash_partition():
   logging.info("---------------------Create Flash Partition---------------------")
   cmd=SCRIPT_CREATE_FLASH_PARTITION + DD_FLASH_DEV
   logging.debug(cmd)
-  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  output = os.system(cmd)
+  logging.debug(output)
 
 def create_flash_filesystem():
   logging.info("---------------------Create Flash FileSystem---------------------")
@@ -216,13 +218,15 @@ def create_flash_filesystem():
     INSTALL_OS_TO_FLASH = " 1"
   cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + INSTALL_OS_TO_FLASH
   logging.debug(cmd)
-  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  output = os.system(cmd)
+  logging.debug(output)
 
 def mount_disk():
   logging.info("---------------------Mount Disk---------------------")
   cmd=SCRIPT_MOUNT_ROOTFS + DD_FLASH_DEV + " " + GV_USB_INSTALL_PART + " " + diskDir
   logging.debug(cmd)
-  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  output = os.system(cmd)
+  logging.debug(output)
 
 def wait_i2():
   logging.info("---------------------Wait I2--------------------")

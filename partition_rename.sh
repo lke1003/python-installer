@@ -9,3 +9,4 @@ do
 tune2fs -L "Prom" $RENAME
 done 
 
+exit 0
