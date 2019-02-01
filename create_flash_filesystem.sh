@@ -5,9 +5,17 @@ GV_FLASH_P2_LABEL=$2
 DD_FLASH_DEV=$3
 GV_INSTALL_OS_TO_FLASH=$4
 
+func_check_error()
+{
+    if [ $1 != 0 ]; then
+        echo $2 >> fullinstall.log
+    fi
+}
+
 echo "################# Create Flash Filesystem ########################" >> fullinstall.log
 #Create Partition 1 filesystem
 yes | mkfs.ext4 -L "$GV_FLASH_P1_LABEL" ""$DD_FLASH_DEV"1" >/dev/null 2>&1
+func_check_error $? "Can not create filesystem in partition1 of flash."
 
 #umount /flash >/dev/null 2>&1
 if [ "$GV_INSTALL_OS_TO_FLASH" == "0" ]; then
@@ -15,5 +23,6 @@ if [ "$GV_INSTALL_OS_TO_FLASH" == "0" ]; then
 umount ""$DD_FLASH_DEV"1" >/dev/null 2>&1
 sleep 1
 yes | mkfs.ext4 -L "$GV_FLASH_P2_LABEL" ""$DD_FLASH_DEV"2" >/dev/null 2>&1
+func_check_error $? "Can not create filesystem in partition3 of flash."
 sleep 1
 fi
