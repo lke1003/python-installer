@@ -184,16 +184,20 @@ def poweroff_msg(d, msg):
 
 def full_install(d):
   d.gauge_start("Flash Partition Rename", title="Starting Install")  
-  partition_rename()
+  if partition_rename()==False:
+    poweroff_msg(d, "Fail to rename Partition")
   time.sleep(3) 
   d.gauge_update(5, "Create Flash Partition", update_text=1)  
-  create_flash_partition()
+  if create_flash_partition()==False:
+    poweroff_msg(d, "Fail to Create Flash partition")
   time.sleep(3) 
   d.gauge_update(10, "Create Flash FileSystem", update_text=1) 
-  create_flash_filesystem()
+  if create_flash_filesystem()==False:
+    poweroff_msg(d, "Fail to Create Flash file system")
   time.sleep(3) 
-  d.gauge_update(20, "Mount Disk", update_text=1) 
-  mount_disk()
+  d.gauge_update(20, "Mount Disk", update_text=1)
+  if mount_disk()==False:
+    poweroff_msg(d, "Fail to Mount RootFS")
   d.gauge_stop() 
 
 def partition_rename():
@@ -202,6 +206,10 @@ def partition_rename():
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
 
 def create_flash_partition():
   logging.info("---------------------Create Flash Partition---------------------")
@@ -209,6 +217,10 @@ def create_flash_partition():
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
 
 def create_flash_filesystem():
   logging.info("---------------------Create Flash FileSystem---------------------")
@@ -220,6 +232,10 @@ def create_flash_filesystem():
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
 
 def mount_disk():
   logging.info("---------------------Mount Disk---------------------")
@@ -227,12 +243,17 @@ def mount_disk():
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
 
 def wait_i2():
   logging.info("---------------------Wait I2--------------------")
   cmd=SCRIPT_WAIT_I2
   logging.debug(cmd)
-  output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  output = os.system(cmd)
+  logging.debug(output)
 
 def main():
   logging.info('Start Installer')

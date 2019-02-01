@@ -6,3 +6,5 @@ while [ $(pgrep -cx "\<i2\>") -eq 0 ]; do
     echo -n "."
 done
 echo Done
+
+exit 0
