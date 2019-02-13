@@ -17,6 +17,8 @@ SG_MAP_INSTALL_USB_NAME="opf-installer"
 
 GV_FLASH_P1_LABEL="Prom_fp1"
 GV_FLASH_P2_LABEL="Prom_sys"
+GV_BACKUP_LABEL="Prom_backup"
+GV_OS_LABEL=GV_FLASH_P2_LABEL
 
 MSG_NO_DOM="Please insert one DOM (Media) for installation"
 GV_USB_INSTALL_PART=""
@@ -25,11 +27,14 @@ DD_FLASH_DEV=""
 GV_NUMBER_OF_HDD=0
 SELECTED_RAID_MODE=""
 INSTALL_DEVICE=1
+
 SCRIPT_PARTITION_RENAME="./partition_rename.sh "
 SCRIPT_CREATE_FLASH_PARTITION="./create_flash_partition.sh "
 SCRIPT_CREATE_FLASH_FILESYSTEM="./create_flash_filesystem.sh "
 SCRIPT_WAIT_I2="./wait_i2.sh "
 SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
+SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
+SCRIPT_GRUB_INSTALL="./grub_install.sh "
 
 
 def handle_exit_code(d, code):
@@ -180,7 +185,7 @@ def log_param():
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
         width=80,)
-  #os.system("shutdown now -h")
+  os.system("shutdown now -h")
 
 def full_install(d):
   d.gauge_start("Flash Partition Rename", title="Starting Install")  
@@ -198,7 +203,16 @@ def full_install(d):
   d.gauge_update(20, "Mount Disk", update_text=1)
   if mount_disk()==False:
     poweroff_msg(d, "Fail to Mount RootFS")
+  time.sleep(3)
+  d.gauge_update(30, "Copy RootFS", update_text=1)
+  if copy_rootfs()==False:
+    poweroff_msg(d, "Fail to Copy RootFS")
+  d.gauge_update(80, "Install Grub", update_text=1)
+  if grub_install()==False:
+    poweroff_msg(d, "Fail to Install Grub")
+  d.gauge_update(80, "Install Grub", update_text=1)
   d.gauge_stop() 
+  poweroff_msg(d, "Finish Installation")
 
 def partition_rename():
   logging.info("---------------------Flash Partition Rename---------------------")
@@ -240,6 +254,28 @@ def create_flash_filesystem():
 def mount_disk():
   logging.info("---------------------Mount Disk---------------------")
   cmd=SCRIPT_MOUNT_ROOTFS + DD_FLASH_DEV + " " + GV_USB_INSTALL_PART + " " + diskDir
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
+def copy_rootfs():
+  logging.info("---------------------Copy Rootfs---------------------")
+  cmd=SCRIPT_COPY_ROOTFS + diskDir + " " + DD_FLASH_DEV + " " + GV_OS_LABEL + " " + GV_BACKUP_LABEL + " " + GV_FLASH_P1_LABEL
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
+def grub_install():
+  logging.info("---------------------Grub Install---------------------")
+  cmd=SCRIPT_GRUB_INSTALL + DD_FLASH_DEV 
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
