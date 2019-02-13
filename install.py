@@ -35,6 +35,7 @@ SCRIPT_WAIT_I2="./wait_i2.sh "
 SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
 SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
 SCRIPT_GRUB_INSTALL="./grub_install.sh "
+SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
 
 
 def handle_exit_code(d, code):
@@ -79,8 +80,8 @@ def full_install_confirm(d):
     return False
 
 def get_raid_mode_table(d):
-  #RMT_COUNT="PD_COUNT="+str(GV_NUMBER_OF_HDD)
-  RMT_COUNT="PD_COUNT="+str(4)
+  RMT_COUNT="PD_COUNT="+str(GV_NUMBER_OF_HDD)
+ # RMT_COUNT="PD_COUNT="+str(4)
   no=0
   LIST_MODE_RESULT=[]
   LIST_DEFAULT=False
@@ -214,6 +215,18 @@ def full_install(d):
   d.gauge_stop() 
   poweroff_msg(d, "Finish Installation")
 
+def full_install_HDD(d):
+  d.gauge_start("Flash Partition Rename", title="Starting Install")  
+  if partition_rename()==False:
+    poweroff_msg(d, "Fail to rename Partition")
+  time.sleep(3) 
+  d.gauge_update(5, "Clear Drive Data", update_text=1)  
+  if clear_all_drive()==False:
+    poweroff_msg(d, "Fail to rename Clear Drive")
+  time.sleep(3) 
+  d.gauge_update(10, "Install Grub", update_text=1)
+  d.gauge_stop() 
+
 def partition_rename():
   logging.info("---------------------Flash Partition Rename---------------------")
   cmd=SCRIPT_PARTITION_RENAME + GV_FLASH_P2_LABEL
@@ -284,6 +297,17 @@ def grub_install():
   else:
     return True
 
+def clear_all_drive():
+  logging.info("---------------------Clear All Drive---------------------")
+  cmd=SCRIPT_CLEAR_ALL_DRIVE
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
 def wait_i2():
   logging.info("---------------------Wait I2--------------------")
   cmd=SCRIPT_WAIT_I2
@@ -303,7 +327,10 @@ def main():
   INSTALL_DEVICE=device_menu(d)  # 1 = install on flash, 2 = install on HDD
   if full_install_confirm(d) == True:
     log_param()
-    full_install(d)
+    if INSTALL_DEVICE == "1":
+      full_install(d)
+    elif INSTALL_DEVICE == "2":
+      full_install_HDD(d)
   else:
     if d.yesno("Shutdown?") == d.OK:
       poweroff_msg(d, "")
