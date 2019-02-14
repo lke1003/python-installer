@@ -38,6 +38,7 @@ SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
 SCRIPT_GRUB_INSTALL="./grub_install.sh "
 SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
 SCRIPT_CREATE_HDD_PARTITION="./create_hdd_partition.sh "
+SCRIPT_CREATE_GRUB_FLASH_PARTITION="./create_grub_flash_partition.sh "
 
 
 def handle_exit_code(d, code):
@@ -227,10 +228,17 @@ def full_install_HDD(d):
     poweroff_msg(d, "Fail to rename Clear Drive")
   time.sleep(3) 
   d.gauge_update(10, "Create HDD Partition", update_text=1)
-  
   if create_hdd_partition()==False:
     poweroff_msg(d, "Fail to Create HDD Partition")
-  d.gauge_update(15, "Create FinishHDD Partition", update_text=1)
+  d.gauge_update(15, "Create Grub Flash Partition", update_text=1)
+  if create_grub_flash_partition()==False:
+    poweroff_msg(d, "Fail to Create Grub Partition")
+  d.gauge_update(25, "Create Finish Grub Partition", update_text=1)
+  if mount_disk()==False:
+    poweroff_msg(d, "Fail to Mount RootFS")
+  time.sleep(3)
+  d.gauge_update(30, "Copy RootFS", update_text=1)
+
   d.gauge_stop() 
 
 def partition_rename():
@@ -272,10 +280,19 @@ def create_flash_filesystem():
 
 def mount_disk():
   logging.info("---------------------Mount Disk---------------------")
-  cmd=SCRIPT_MOUNT_ROOTFS + DD_FLASH_DEV + " " + GV_USB_INSTALL_PART + " " + diskDir
+  if INSTALL_DEVICE == "1":
+    OS_ROOTFS_DEV=DD_FLASH_DEV + "2"
+  elif INSTALL_DEVICE == "2":
+    #Get correct OS dev name
+    fd=open("OS_DEV.txt")
+    OS_ROOTFS_DEV=fd.readline().rstrip()
+    fd.close()
+  cmd=SCRIPT_MOUNT_ROOTFS + DD_FLASH_DEV + " " + OS_ROOTFS_DEV + " " + GV_USB_INSTALL_PART + " " + diskDir
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
+  if os.path.exists("OS_DEV.txt"):
+    os.remove("OS_DEV.txt")
   if output != 0:
     return False
   else:
@@ -317,6 +334,17 @@ def clear_all_drive():
 def create_hdd_partition():
   logging.info("---------------------Create HDD Partition---------------------")
   cmd=SCRIPT_CREATE_HDD_PARTITION + GV_OS_LABEL + " " + GV_DATA_LABEL 
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
+def create_grub_flash_partition():
+  logging.info("---------------------Create Grub Flash Partition---------------------")
+  cmd=SCRIPT_CREATE_GRUB_FLASH_PARTITION + GV_FLASH_P1_LABEL + " " + DD_FLASH_DEV 
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)

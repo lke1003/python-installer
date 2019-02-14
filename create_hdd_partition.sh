@@ -94,6 +94,7 @@ EOF
 
         sleep 1
         OS_ROOTFS_DEV=""$OS_DEV"1"
+        echo $OS_ROOTFS_DEV > OS_DEV.txt
         mkfs.ext4 -L "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
         func_check_error $? "Can not create os filesystem."
         sleep 1

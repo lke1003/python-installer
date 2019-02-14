@@ -1,10 +1,10 @@
 #!/bin/bash
 
 DD_FLASH_DEV=$1
-OS_ROOTFS_DEV="${DD_FLASH_DEV}2"
 OS_BOOT_DEV="${DD_FLASH_DEV}1"
-GV_USB_INSTALL_PART=$2
-mount_disk=$3
+OS_ROOTFS_DEV=$2
+GV_USB_INSTALL_PART=$3
+mount_disk=$4
 RESULT=0
 
 func_check_error()
