@@ -37,7 +37,7 @@ SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
 SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
 SCRIPT_GRUB_INSTALL="./grub_install.sh "
 SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
-SCRIPT_CREATE_HDD_PARTITION="./create_hdd_partition.sh "
+SCRIPT_CREATE_NO_RAID_HDD_PARTITION="./create_no_raid_hdd_partition.sh "
 SCRIPT_CREATE_GRUB_FLASH_PARTITION="./create_grub_flash_partition.sh "
 
 
@@ -231,8 +231,11 @@ def full_install_HDD(d):
     poweroff_msg(d, "Fail to rename Clear Drive")
   time.sleep(3) 
   d.gauge_update(10, "Create HDD Partition", update_text=1)
-  if create_hdd_partition()==False:
-    poweroff_msg(d, "Fail to Create HDD Partition")
+  if SELECTED_RAID_MODE=="NO_RAID":
+    if create_no_raid_hdd_partition()==False:
+      poweroff_msg(d, "Fail to Create HDD Partition")
+  else:
+
   d.gauge_update(15, "Create Grub Flash Partition", update_text=1)
   if create_grub_flash_partition()==False:
     poweroff_msg(d, "Fail to Create Grub Partition")
@@ -248,6 +251,7 @@ def full_install_HDD(d):
     poweroff_msg(d, "Fail to Install Grub")
   d.gauge_update(100, "Finish install Grub", update_text=1)
   d.gauge_stop() 
+  poweroff_msg(d, "Finish Installation")
 
 def partition_rename():
   logging.info("---------------------Flash Partition Rename---------------------")
@@ -339,9 +343,20 @@ def clear_all_drive():
   else:
     return True
 
-def create_hdd_partition():
-  logging.info("---------------------Create HDD Partition---------------------")
-  cmd=SCRIPT_CREATE_HDD_PARTITION + GV_OS_LABEL + " " + GV_DATA_LABEL 
+def create_no_raid_hdd_partition():
+  logging.info("---------------------Create No Raid HDD Partition---------------------")
+  cmd=SCRIPT_CREATE_NO_RAID_HDD_PARTITION + GV_OS_LABEL + " " + GV_DATA_LABEL 
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
+def create_raid_hdd_partition():
+  logging.info("---------------------Create Raid HDD Partition---------------------")
+  cmd=SCRIPT_CREATE_NO_RAID_HDD_PARTITION
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
