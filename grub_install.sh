@@ -11,6 +11,7 @@ func_check_error()
     fi
 }
 
+echo "################# Grub Install ########################" >> fullinstall.log
 grub-install --boot-directory=/disk/boot $DD_FLASH_DEV >/dev/null 2>&1
 func_check_error $? "Grub install error."
 

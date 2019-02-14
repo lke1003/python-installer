@@ -17,6 +17,7 @@ func_check_error()
     fi
 }
 
+echo "################# Copy Rootfs ########################" >> fullinstall.log
 cd $MountDir
 tar jxmfv /prom-pkg/disk_rootfs.tar.bz2 > $MountDir/progress.log
 func_check_error $? "Install root filesystem error."
