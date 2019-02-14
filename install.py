@@ -19,6 +19,7 @@ GV_FLASH_P1_LABEL="Prom_fp1"
 GV_FLASH_P2_LABEL="Prom_sys"
 GV_BACKUP_LABEL="Prom_backup"
 GV_OS_LABEL=GV_FLASH_P2_LABEL
+GV_DATA_LABEL="Prom_data"
 
 MSG_NO_DOM="Please insert one DOM (Media) for installation"
 GV_USB_INSTALL_PART=""
@@ -36,6 +37,7 @@ SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
 SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
 SCRIPT_GRUB_INSTALL="./grub_install.sh "
 SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
+SCRIPT_CREATE_HDD_PARTITION="./create_hdd_partition.sh "
 
 
 def handle_exit_code(d, code):
@@ -224,7 +226,11 @@ def full_install_HDD(d):
   if clear_all_drive()==False:
     poweroff_msg(d, "Fail to rename Clear Drive")
   time.sleep(3) 
-  d.gauge_update(10, "Install Grub", update_text=1)
+  d.gauge_update(10, "Create HDD Partition", update_text=1)
+  
+  if create_hdd_partition()==False:
+    poweroff_msg(d, "Fail to Create HDD Partition")
+  d.gauge_update(15, "Create FinishHDD Partition", update_text=1)
   d.gauge_stop() 
 
 def partition_rename():
@@ -300,6 +306,17 @@ def grub_install():
 def clear_all_drive():
   logging.info("---------------------Clear All Drive---------------------")
   cmd=SCRIPT_CLEAR_ALL_DRIVE
+  logging.debug(cmd)
+  output = os.system(cmd)
+  logging.debug(output)
+  if output != 0:
+    return False
+  else:
+    return True
+
+def create_hdd_partition():
+  logging.info("---------------------Create HDD Partition---------------------")
+  cmd=SCRIPT_CREATE_HDD_PARTITION + GV_OS_LABEL + " " + GV_DATA_LABEL 
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)

@@ -14,6 +14,7 @@ func_check_error()
     fi
 }
 
+echo "################# Clear all Drive ########################" >> fullinstall.log
 ivconfig -ca >/dev/null 2>&1 
 func_check_error $? "Del array error."
 sleep 1
