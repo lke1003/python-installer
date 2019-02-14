@@ -118,6 +118,9 @@ def radio_list_raid_mode(d, Raid_MODE):
     code, tag=d.radiolist("Please select the raid mode",
                           width = 65,
                           choices=Raid_MODE)
+    logging.debug(Raid_MODE)
+    logging.debug(tag)
+    logging.debug(Raid_MODE[int(tag)-1][1])
     if handle_exit_code(d, code):
       break
   return Raid_MODE[int(tag)-1][1]
@@ -214,7 +217,7 @@ def full_install(d):
   d.gauge_update(80, "Install Grub", update_text=1)
   if grub_install()==False:
     poweroff_msg(d, "Fail to Install Grub")
-  d.gauge_update(80, "Install Grub", update_text=1)
+  d.gauge_update(100, "Finish install Grub", update_text=1)
   d.gauge_stop() 
   poweroff_msg(d, "Finish Installation")
 
@@ -238,7 +241,12 @@ def full_install_HDD(d):
     poweroff_msg(d, "Fail to Mount RootFS")
   time.sleep(3)
   d.gauge_update(30, "Copy RootFS", update_text=1)
-
+  if copy_rootfs()==False:
+    poweroff_msg(d, "Fail to Copy RootFS")
+  d.gauge_update(80, "Install Grub", update_text=1)
+  if grub_install()==False:
+    poweroff_msg(d, "Fail to Install Grub")
+  d.gauge_update(100, "Finish install Grub", update_text=1)
   d.gauge_stop() 
 
 def partition_rename():
