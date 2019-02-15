@@ -1,9 +1,11 @@
 #!/bin/bash
 
 RAID_MODE=$1
+GV_OS_LABEL=$2
+GV_DATA_LABEL=$3
 GV_OS_ALIAS="OS_Drive"
-SG_MAP_LD_NAME="Promise"
 GV_DATA_ALIAS="DATA_Drive"
+SG_MAP_LD_NAME="Promise"
 RESULT=0
 
 func_check_error()
@@ -29,7 +31,7 @@ create_raid_da()
 {
     case $1 in
         "RAID_0" | "RAID_1" | "RAID_1+0" | "RAID_5")
-            clitest -u administrator -p password -C array -a add -p $PHY_LIST
+            clitest -u administrator -p password -C array -a add -p $PHY_LIST 
             func_check_error $? "Can not create DA."
             ;;
         "RAID_5+Hotspare")
@@ -112,9 +114,88 @@ create_raid_ld()
 
 }
 
+partition_os_ld()
+{
+    #-------------------------  partition OS_LD -------------------------
+    # LD: ==OS_DEV
+    #
+
+    OS_DEV="/dev/"$OS_DEV""
+	fdisk $OS_DEV >/dev/null 2>&1 <<EOF
+n
+p
+1
+
+
+
+w
+
+
+EOF
+        sleep 2
+        func_check_error $? "Can not create os partition."
+
+        sleep 2
+
+        OS_ROOTFS_DEV=""$OS_DEV"1"
+        echo $OS_ROOTFS_DEV > OS_DEV.txt
+        mkfs.ext4 -L "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
+        func_check_error $? "Can not create os filesystem."
+	
+}
+
+partition_data_ld()
+{
+    #-------------------------  partition DATA_LD -------------------------
+    # LD: ==DATA_DEV
+    #
+    DATA_DEV="/dev/"$DATA_DEV""
+    #  LD_MAX=$(parted -s $DATA_DEV print|grep $DATA_DEV |awk '{print $3}')
+
+    fdisk $DATA_DEV >/dev/null 2>&1 <<EOF
+n
+p
+1
+
+
+
+w
+
+
+EOF
+    func_check_error $? "Can not create data partition."
+
+    DATA_P1_DEV=""$DATA_DEV"1"
+    sleep 2
+
+    mkfs.ext4 -L "$GV_DATA_LABEL"1 $DATA_P1_DEV >/dev/null 2>&1
+    func_check_error $? "Can not create data filesystem."
+
+}
+
+echo "################# Create HDD Partition ########################" >> fullinstall.log
+PHY_TMP=""
+PHY=$(clitest -u administrator -p password -C phydrv | grep Unconfigured | awk '{print $1}')
+PHY_OPST=$(clitest -u administrator -p password -C phydrv | grep OK | awk '{print $1}')
+for PHY_UNCF in $PHY
+do
+    for PHY_OK in $PHY_OPST
+    do
+        if [ "$PHY_UNCF" == "$PHY_OK" ]; then
+            PHY_TMP="$PHY_TMP $PHY_OK"
+        fi
+    done
+done
+GV_PHY_COUNT=0
+for PHYS in $PHY
+do
+    GV_PHY_COUNT=$(( $GV_PHY_COUNT + 1 ))
+done
+
+PHY_LIST=$(echo $PHY | sed 's/ /,/g')
+
 create_raid_da  $RAID_MODE
 sleep 2
-
 OLD_DEV=$(sg_map -i |grep "$SG_MAP_LD_NAME" |grep -vn 'V-LUN' |awk '{print $2}')
 create_raid_ld $RAID_MODE $GV_OS_ALIAS 20GB
 
@@ -135,7 +216,6 @@ OLD_DEV=$(sg_map -i |grep "$SG_MAP_LD_NAME" |grep -vn 'V-LUN' |awk '{print $2}')
 OLD_DEV=$(echo $OLD_DEV | sed 's/\/dev\///g')
 for DEV in $OLD_DEV
 do
-    #  echo $DEV
     NEW_DEV=$DEV
 done
 DATA_DEV=$(echo $NEW_DEV|sed 's/ //g')
@@ -147,3 +227,5 @@ DATA_LD=$(clitest -u administrator -p password -C logdrv |grep "$GV_DATA_ALIAS" 
 partition_os_ld
 
 partition_data_ld
+
+exit $RESULT

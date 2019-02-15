@@ -117,7 +117,7 @@ EOF
         mkfs.ext4 -L "$NO_RAID_LABEL" $DATA_DEV >/dev/null 2>&1
         func_check_error $? "Can not create data filesystem."
         sleep 1
-        DATA_DRV_COUNT=$DATA_DRV_COUNT+1 
+        (( DATA_DRV_COUNT++ ))
     fi
 done
 

@@ -38,6 +38,7 @@ SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
 SCRIPT_GRUB_INSTALL="./grub_install.sh "
 SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
 SCRIPT_CREATE_NO_RAID_HDD_PARTITION="./create_no_raid_hdd_partition.sh "
+SCRIPT_CREATE_RAID_HDD_PARTITION="./create_raid_hdd_partition.sh "
 SCRIPT_CREATE_GRUB_FLASH_PARTITION="./create_grub_flash_partition.sh "
 
 
@@ -175,19 +176,32 @@ def get_flash_dev():
   return FLASH_DEV
 
 def log_param():
-  logging.debug("-------------------------Global Parameter--------------------")
+  logging.debug("-------------------------Global Variable--------------------")
   logging.debug("SG_MAP_INSTALL_USB_NAME="+SG_MAP_INSTALL_USB_NAME)
   logging.debug("GV_FLASH_P1_LABEL="+GV_FLASH_P1_LABEL)
   logging.debug("GV_FLASH_P2_LABEL="+GV_FLASH_P2_LABEL)
+  logging.debug("GV_BACKUP_LABEL="+GV_BACKUP_LABEL)
+  logging.debug("GV_OS_LABEL="+GV_OS_LABEL)
+  logging.debug("GV_DATA_LABEL="+GV_DATA_LABEL)
   logging.debug("GV_USB_INSTALL_PART="+GV_USB_INSTALL_PART)
   logging.debug("GV_USB_INSTALL_DEV="+GV_USB_INSTALL_DEV)
   logging.debug("DD_FLASH_DEV="+DD_FLASH_DEV)
+  logging.debug("GV_NUMBER_OF_HDD="+GV_NUMBER_OF_HDD)
   logging.debug("SELECTED_RAID_MODE="+SELECTED_RAID_MODE)
+  logging.debug("INSTALL_DEVICE="+INSTALL_DEVICE)
+  logging.debug("-------------------------SCRIPT FILE NAME--------------------")
   logging.debug("SCRIPT_PARTITION_RENAME="+SCRIPT_PARTITION_RENAME)
   logging.debug("SCRIPT_CREATE_FLASH_PARTITION="+SCRIPT_CREATE_FLASH_PARTITION)
   logging.debug("SCRIPT_CREATE_FLASH_FILESYSTEM="+SCRIPT_CREATE_FLASH_FILESYSTEM)
-  logging.debug("INSTALL_DEVICE="+INSTALL_DEVICE)
-  logging.debug("-------------------------Global Parameter End--------------------")
+  logging.debug("SCRIPT_WAIT_I2="+SCRIPT_WAIT_I2)
+  logging.debug("SCRIPT_MOUNT_ROOTFS="+SCRIPT_MOUNT_ROOTFS)
+  logging.debug("SCRIPT_COPY_ROOTFS="+SCRIPT_COPY_ROOTFS)
+  logging.debug("SCRIPT_GRUB_INSTALL="+SCRIPT_GRUB_INSTALL)
+  logging.debug("SCRIPT_CLEAR_ALL_DRIVE="+SCRIPT_CLEAR_ALL_DRIVE)
+  logging.debug("SCRIPT_CREATE_NO_RAID_HDD_PARTITION="+SCRIPT_CREATE_NO_RAID_HDD_PARTITION)
+  logging.debug("SCRIPT_CREATE_RAID_HDD_PARTITION="+SCRIPT_CREATE_RAID_HDD_PARTITION)
+  logging.debug("SCRIPT_CREATE_GRUB_FLASH_PARTITION="+SCRIPT_CREATE_GRUB_FLASH_PARTITION)
+  logging.debug("------------------------- End --------------------")
 
 def poweroff_msg(d, msg):
   d.msgbox("{0}\n\nPress 'OK' to Shutdown".format(msg),
@@ -235,7 +249,8 @@ def full_install_HDD(d):
     if create_no_raid_hdd_partition()==False:
       poweroff_msg(d, "Fail to Create HDD Partition")
   else:
-
+    if create_raid_hdd_partition()==False:
+      poweroff_msg(d, "Fail to Create HDD Partition")
   d.gauge_update(15, "Create Grub Flash Partition", update_text=1)
   if create_grub_flash_partition()==False:
     poweroff_msg(d, "Fail to Create Grub Partition")
@@ -356,7 +371,7 @@ def create_no_raid_hdd_partition():
 
 def create_raid_hdd_partition():
   logging.info("---------------------Create Raid HDD Partition---------------------")
-  cmd=SCRIPT_CREATE_NO_RAID_HDD_PARTITION
+  cmd=SCRIPT_CREATE_RAID_HDD_PARTITION + SELECTED_RAID_MODE + " " + GV_OS_LABEL + " " + GV_DATA_LABEL
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
