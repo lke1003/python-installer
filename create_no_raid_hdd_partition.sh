@@ -6,6 +6,9 @@ RESULT=0
 SG_MAP_LD_NAME="Promise"
 GV_DATA_ALIAS="DATA_Drive"
 
+export SW_CONF_PATH=/opt/flash/sw/confusr
+export OEM_PATH=/opt/flash/sw/oem
+
 func_wait_for_ld_init_to_finish() {
     while [ 1 ]
     do
@@ -95,7 +98,7 @@ EOF
         sleep 1
         OS_ROOTFS_DEV=""$OS_DEV"1"
         echo $OS_ROOTFS_DEV > OS_DEV.txt
-        mkfs.ext4 -L "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
+        mkfs.ext4 -FL "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
         func_check_error $? "Can not create os filesystem."
         sleep 1
     else
@@ -114,7 +117,7 @@ w
 EOF
         sleep 1
         DATA_DEV=""$DATA_DEV"1"
-        mkfs.ext4 -L "$NO_RAID_LABEL" $DATA_DEV >/dev/null 2>&1
+        mkfs.ext4 -FL "$NO_RAID_LABEL" $DATA_DEV >/dev/null 2>&1
         func_check_error $? "Can not create data filesystem."
         sleep 1
         (( DATA_DRV_COUNT++ ))

@@ -47,7 +47,7 @@ EOF
 sleep 1
 
 #Create Partition 1 filesystem
-mkfs.ext4 -L "$GV_FLASH_P1_LABEL" ""$DD_FLASH_DEV"1" >/dev/null 2>&1
+mkfs.ext4 -FL "$GV_FLASH_P1_LABEL" ""$DD_FLASH_DEV"1" >/dev/null 2>&1
 func_check_error $? "Can not create filesystem in partition1 of flash."
 
 sleep 3

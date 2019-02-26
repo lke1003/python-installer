@@ -5,6 +5,7 @@ export SW_CONF_PATH=/opt/flash/sw/confusr
 export OEM_PATH=/opt/flash/sw/oem
 
 export PATH=$PATH:/opt/flash/sw/bin
+echo 4 > /proc/sys/kernel/printk
 
 func_check_error()
 {

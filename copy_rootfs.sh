@@ -19,11 +19,11 @@ func_check_error()
 
 echo "################# Copy Rootfs ########################" >> fullinstall.log
 cd $MountDir
-tar jxmfv /prom-pkg/disk_rootfs.tar.bz2 > $MountDir/progress.log
+tar jxmfv /prom-pkg/disk_rootfs.tar.bz2 > $MountDir/progress.log 2>&1
 func_check_error $? "Install root filesystem error."
 
 cd /prom-pkg 
-./prom-install.sh $MountDir $DD_FLASH_DEV > $MountDir/PromiseInstall.log
+./prom-install.sh $MountDir $DD_FLASH_DEV > $MountDir/PromiseInstall.log 2>&1
 func_check_error $? "Install PromiseInstall error."
 
 
@@ -41,7 +41,7 @@ echo "/swapfile  none swap sw 0 0" >> $MountDir/etc/fstab.backup
 
 
 if [ ! -e "$MountDir/swapfile" ]; then
-dd if=/dev/zero of=$MountDir/swapfile bs=1M count=1024 > $MountDir/progress.log
+dd if=/dev/zero of=$MountDir/swapfile bs=1M count=1024 > $MountDir/progress.log 2>&1
 chmod 600 $MountDir/swapfile > $MountDir/progress.log
 mkswap $MountDir/swapfile > $MountDir/progress.log
 fi 

@@ -8,6 +8,9 @@ GV_DATA_ALIAS="DATA_Drive"
 SG_MAP_LD_NAME="Promise"
 RESULT=0
 
+export SW_CONF_PATH=/opt/flash/sw/confuser
+export OEM_PATH=/opt/flash/sw/oem
+
 func_check_error()
 {
     if [ $1 != 0 ]; then
@@ -43,12 +46,12 @@ create_raid_da()
             do
                 count=$((${count}+1))
                 unit=$(echo ${size} | tail -c 3)
-                if [ "${unit}" == "GB" ]; then
+                if [ "${unit}" = "GB" ]; then
                     size=$(echo $size | sed 's/..$//' )
                     size=${size%.*}
                 fi
                 
-                if [ "${unit}" == "TB" ]; then
+                if [ "${unit}" = "TB" ]; then
                     size=$(echo $size | sed 's/..$//')
                     size=`echo $size \* 1024  |bc`;
                     size=${size%.*}
@@ -139,7 +142,7 @@ EOF
 
         OS_ROOTFS_DEV=""$OS_DEV"1"
         echo $OS_ROOTFS_DEV > OS_DEV.txt
-        mkfs.ext4 -L "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
+        mkfs.ext4 -FL "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
         func_check_error $? "Can not create os filesystem."
 	
 }
@@ -168,7 +171,7 @@ EOF
     DATA_P1_DEV=""$DATA_DEV"1"
     sleep 2
 
-    mkfs.ext4 -L "$GV_DATA_LABEL"1 $DATA_P1_DEV >/dev/null 2>&1
+    mkfs.ext4 -FL "$GV_DATA_LABEL"1 $DATA_P1_DEV >/dev/null 2>&1
     func_check_error $? "Can not create data filesystem."
 
 }
@@ -181,7 +184,7 @@ for PHY_UNCF in $PHY
 do
     for PHY_OK in $PHY_OPST
     do
-        if [ "$PHY_UNCF" == "$PHY_OK" ]; then
+        if [ "$PHY_UNCF" = "$PHY_OK" ]; then
             PHY_TMP="$PHY_TMP $PHY_OK"
         fi
     done
@@ -227,5 +230,3 @@ DATA_LD=$(clitest -u administrator -p password -C logdrv |grep "$GV_DATA_ALIAS" 
 partition_os_ld
 
 partition_data_ld
-
-exit $RESULT

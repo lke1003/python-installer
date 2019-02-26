@@ -29,17 +29,17 @@ GV_NUMBER_OF_HDD=0
 SELECTED_RAID_MODE=""
 INSTALL_DEVICE=1
 
-SCRIPT_PARTITION_RENAME="./partition_rename.sh "
-SCRIPT_CREATE_FLASH_PARTITION="./create_flash_partition.sh "
-SCRIPT_CREATE_FLASH_FILESYSTEM="./create_flash_filesystem.sh "
-SCRIPT_WAIT_I2="./wait_i2.sh "
-SCRIPT_MOUNT_ROOTFS="./mount_rootfs.sh "
-SCRIPT_COPY_ROOTFS="./copy_rootfs.sh "
-SCRIPT_GRUB_INSTALL="./grub_install.sh "
-SCRIPT_CLEAR_ALL_DRIVE="./clear_all_drive.sh "
-SCRIPT_CREATE_NO_RAID_HDD_PARTITION="./create_no_raid_hdd_partition.sh "
-SCRIPT_CREATE_RAID_HDD_PARTITION="./create_raid_hdd_partition.sh "
-SCRIPT_CREATE_GRUB_FLASH_PARTITION="./create_grub_flash_partition.sh "
+SCRIPT_PARTITION_RENAME="sh /prom-pkg/partition_rename.sh "
+SCRIPT_CREATE_FLASH_PARTITION="sh /prom-pkg/create_flash_partition.sh "
+SCRIPT_CREATE_FLASH_FILESYSTEM="sh /prom-pkg/create_flash_filesystem.sh "
+SCRIPT_WAIT_I2="sh /prom-pkg/wait_i2.sh "
+SCRIPT_MOUNT_ROOTFS="sh /prom-pkg/mount_rootfs.sh "
+SCRIPT_COPY_ROOTFS="sh /prom-pkg/copy_rootfs.sh "
+SCRIPT_GRUB_INSTALL="sh /prom-pkg/grub_install.sh "
+SCRIPT_CLEAR_ALL_DRIVE="sh /prom-pkg/clear_all_drive.sh "
+SCRIPT_CREATE_NO_RAID_HDD_PARTITION="sh /prom-pkg/create_no_raid_hdd_partition.sh "
+SCRIPT_CREATE_RAID_HDD_PARTITION="sh /prom-pkg/create_raid_hdd_partition.sh "
+SCRIPT_CREATE_GRUB_FLASH_PARTITION="sh /prom-pkg/create_grub_flash_partition.sh "
 
 
 def handle_exit_code(d, code):
@@ -85,17 +85,16 @@ def full_install_confirm(d):
 
 def get_raid_mode_table(d):
   RMT_COUNT="PD_COUNT="+str(GV_NUMBER_OF_HDD)
- # RMT_COUNT="PD_COUNT="+str(4)
   no=0
   LIST_MODE_RESULT=[]
   LIST_DEFAULT=False
   global SELECTED_RAID_MODE 
-  cmd="cat raid_mode_table | grep {0}\":\" | ".format(RMT_COUNT)
+  cmd="cat /prom-pkg/raid_mode_table | grep {0} | ".format(RMT_COUNT)
   cmd=cmd+"awk '{print $2}' | sed 's/DF=//g'"
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
   DF_RAID_MODE=output.stdout.rstrip()
 
-  cmd="cat raid_mode_table | grep {0}\":\" | ".format(RMT_COUNT)
+  cmd="cat /prom-pkg/raid_mode_table | grep {0} | ".format(RMT_COUNT)
   cmd=cmd+"awk '{print $3}' | sed 's/,/ /g'"
   output = subprocess.run(cmd, shell=True,  stdout=subprocess.PIPE, universal_newlines=True)
   LIST_RAID_MODE=output.stdout.rstrip()
@@ -186,7 +185,7 @@ def log_param():
   logging.debug("GV_USB_INSTALL_PART="+GV_USB_INSTALL_PART)
   logging.debug("GV_USB_INSTALL_DEV="+GV_USB_INSTALL_DEV)
   logging.debug("DD_FLASH_DEV="+DD_FLASH_DEV)
-  logging.debug("GV_NUMBER_OF_HDD="+GV_NUMBER_OF_HDD)
+  logging.debug("GV_NUMBER_OF_HDD="+str(GV_NUMBER_OF_HDD))
   logging.debug("SELECTED_RAID_MODE="+SELECTED_RAID_MODE)
   logging.debug("INSTALL_DEVICE="+INSTALL_DEVICE)
   logging.debug("-------------------------SCRIPT FILE NAME--------------------")
@@ -296,7 +295,7 @@ def create_flash_filesystem():
     INSTALL_OS_TO_FLASH = " 0"
   else:
     INSTALL_OS_TO_FLASH = " 1"
-  cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV + INSTALL_OS_TO_FLASH
+  cmd=SCRIPT_CREATE_FLASH_FILESYSTEM + GV_FLASH_P1_LABEL + " " + GV_FLASH_P2_LABEL + " " + DD_FLASH_DEV 
   logging.debug(cmd)
   output = os.system(cmd)
   logging.debug(output)
