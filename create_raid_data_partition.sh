@@ -1,9 +1,8 @@
 #!/bin/bash
 
 RAID_MODE=$1
-GV_OS_LABEL=$2
-GV_DATA_LABEL=$3
-GV_OS_ALIAS="OS_Drive"
+GV_DATA_LABEL=$2
+#GV_OS_ALIAS="OS_Drive"
 GV_DATA_ALIAS="DATA_Drive"
 SG_MAP_LD_NAME="Promise"
 RESULT=0
@@ -117,36 +116,6 @@ create_raid_ld()
 
 }
 
-partition_os_ld()
-{
-    #-------------------------  partition OS_LD -------------------------
-    # LD: ==OS_DEV
-    #
-
-    OS_DEV="/dev/"$OS_DEV""
-	fdisk $OS_DEV >/dev/null 2>&1 <<EOF
-n
-p
-1
-
-
-
-w
-
-
-EOF
-        sleep 2
-        func_check_error $? "Can not create os partition."
-
-        sleep 2
-
-        OS_ROOTFS_DEV=""$OS_DEV"1"
-        echo $OS_ROOTFS_DEV > OS_DEV.txt
-        mkfs.ext4 -FL "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
-        func_check_error $? "Can not create os filesystem."
-	
-}
-
 partition_data_ld()
 {
     #-------------------------  partition DATA_LD -------------------------
@@ -200,7 +169,7 @@ PHY_LIST=$(echo $PHY | sed 's/ /,/g')
 create_raid_da  $RAID_MODE
 sleep 2
 OLD_DEV=$(sg_map -i |grep "$SG_MAP_LD_NAME" |grep -vn 'V-LUN' |awk '{print $2}')
-create_raid_ld $RAID_MODE $GV_OS_ALIAS 20GB
+#create_raid_ld $RAID_MODE $GV_OS_ALIAS 20GB
 
 OLD_DEV=$(sg_map -i |grep "$SG_MAP_LD_NAME" |grep -vn 'V-LUN' |awk '{print $2}')
 OLD_DEV=$(echo $OLD_DEV | sed 's/\/dev\///g')
@@ -224,10 +193,8 @@ done
 DATA_DEV=$(echo $NEW_DEV|sed 's/ //g')
 
 ############################################################################
-OS_LD=$(clitest -u administrator -p password -C logdrv |grep "$GV_OS_ALIAS" |awk '{print $1}')
-DATA_LD=$(clitest -u administrator -p password -C logdrv |grep "$GV_DATA_ALIAS" |awk '{print $1}')
 
-partition_os_ld
+DATA_LD=$(clitest -u administrator -p password -C logdrv |grep "$GV_DATA_ALIAS" |awk '{print $1}')
 
 partition_data_ld
 

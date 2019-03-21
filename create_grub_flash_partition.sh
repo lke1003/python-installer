@@ -2,7 +2,8 @@
 
 RESULT=0
 GV_FLASH_P1_LABEL=$1
-DD_FLASH_DEV=$2
+GV_FLASH_P3_LABEL=$2
+DD_FLASH_DEV=$3
 
 func_check_error()
 {
@@ -23,6 +24,11 @@ p
 1
 
 +10G
+n
+p
+2
+
++5G
 n
 e
 
@@ -50,6 +56,9 @@ sleep 1
 mkfs.ext4 -FL "$GV_FLASH_P1_LABEL" ""$DD_FLASH_DEV"1" >/dev/null 2>&1
 func_check_error $? "Can not create filesystem in partition1 of flash."
 
+sleep 1
+mkfs.ext4 -FL "$GV_FLASH_P3_LABEL" ""$DD_FLASH_DEV"2" >/dev/null 2>&1
+func_check_error $? "Can not create filesystem in partition2 of flash."
 sleep 3
 
 exit $RESULT

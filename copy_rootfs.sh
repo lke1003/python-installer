@@ -6,6 +6,7 @@ DD_FLASH_DEV=$2
 GV_OS_LABEL=$3
 GV_BACKUP_LABEL=$4
 GV_FLASH_P1_LABEL=$5
+GV_FLASH_P3_LABEL=$6
 
 RESULT=0
 
@@ -33,6 +34,7 @@ sleep 3
 
 echo "LABEL="$GV_OS_LABEL" / ext4 errors=remount-ro 0 0" > $MountDir/etc/fstab
 echo "LABEL="$GV_FLASH_P1_LABEL" /boot ext4 defaults 0 0" >> $MountDir/etc/fstab
+echo "LABEL="$GV_FLASH_P3_LABEL" /var ext4 defaults 0 0" >> $MountDir/etc/fstab
 echo "/swapfile  none swap sw 0 0" >> $MountDir/etc/fstab
 
 echo "LABEL="$GV_BACKUP_LABEL" / ext4 defaults 0 0" > $MountDir/etc/fstab.backup

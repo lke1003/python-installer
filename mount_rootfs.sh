@@ -3,8 +3,9 @@
 DD_FLASH_DEV=$1
 OS_BOOT_DEV="${DD_FLASH_DEV}1"
 OS_ROOTFS_DEV=$2
-GV_USB_INSTALL_PART=$3
-mount_disk=$4
+OS_VAR_DEV=$3
+GV_USB_INSTALL_PART=$4
+mount_disk=$5
 RESULT=0
 
 func_check_error()
@@ -25,5 +26,10 @@ sleep 3
 mkdir -p /disk/boot >/dev/null 2>&1 
 mount $OS_BOOT_DEV /disk/boot >/dev/null 2>&1 
 func_check_error $? "Can not mount boot."
+
+sleep 3
+mkdir -p /disk/var >/dev/null 2>&1 
+mount $OS_VAR_DEV /disk/var >/dev/null 2>&1 
+func_check_error $? "Can not mount var."
 
 exit $RESULT

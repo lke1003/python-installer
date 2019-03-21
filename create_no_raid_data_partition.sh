@@ -1,7 +1,6 @@
 #!/bin/bash
 
-GV_OS_LABEL=$1
-GV_DATA_LABEL=$2
+GV_DATA_LABEL=$1
 RESULT=0
 SG_MAP_LD_NAME="Promise"
 GV_DATA_ALIAS="DATA_Drive"
@@ -73,51 +72,27 @@ do
 
     #------------------------- partition ----------------------------
 
-    if [ "$COUNT_I" = "1" ]; then
-        OS_DEV=${NO_RAID_DEV}
-        OS_DEV="/dev/"$OS_DEV""
-        
-fdisk $OS_DEV >/dev/null 2>&1 <<EOF
-n
-p
-1
-
-            
-            
-w
-
-
-EOF
-
-        sleep 1
-        OS_ROOTFS_DEV=""$OS_DEV"1"
-        echo $OS_ROOTFS_DEV > OS_DEV.txt
-        mkfs.ext4 -FL "$GV_OS_LABEL" $OS_ROOTFS_DEV >/dev/null 2>&1
-        func_check_error $? "Can not create os filesystem."
-        sleep 1
-    else
        
-        NO_RAID_LABEL=$GV_DATA_LABEL$DATA_DRV_COUNT
-        DATA_DEV=${NO_RAID_DEV}
-        DATA_DEV="/dev/"$DATA_DEV""
+    NO_RAID_LABEL=$GV_DATA_LABEL$DATA_DRV_COUNT
+    DATA_DEV=${NO_RAID_DEV}
+    DATA_DEV="/dev/"$DATA_DEV""
 fdisk $DATA_DEV >/dev/null 2>&1 <<EOF
 n
 p
 1
 
-            
-            
+        
+        
 w
 
 
 EOF
-        sleep 1
-        DATA_DEV=""$DATA_DEV"1"
-        mkfs.ext4 -FL "$NO_RAID_LABEL" $DATA_DEV >/dev/null 2>&1
-        func_check_error $? "Can not create data filesystem."
-        sleep 1
-        DATA_DRV_COUNT=$(( $DATA_DRV_COUNT + 1 ))
-    fi
+    sleep 1
+    DATA_DEV=""$DATA_DEV"1"
+    mkfs.ext4 -FL "$NO_RAID_LABEL" $DATA_DEV >/dev/null 2>&1
+    func_check_error $? "Can not create data filesystem."
+    sleep 1
+    DATA_DRV_COUNT=$(( $DATA_DRV_COUNT + 1 ))
     COUNT_I=$(( $COUNT_I + 1 ))
 done
 
